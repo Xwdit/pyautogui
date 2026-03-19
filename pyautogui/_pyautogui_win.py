@@ -47,6 +47,8 @@ MOUSEEVENTF_ABSOLUTE = 0x8000
 MOUSEEVENTF_WHEEL = 0x0800
 MOUSEEVENTF_HWHEEL = 0x01000
 
+WHEEL_DELTA = 120
+
 # Documented here: http://msdn.microsoft.com/en-us/library/windows/desktop/ms646304(v=vs.85).aspx
 KEYEVENTF_KEYDOWN = 0x0000 # Technically this constant doesn't exist in the MS documentation. It's the lack of KEYEVENTF_KEYUP that means pressing the key down.
 KEYEVENTF_KEYUP = 0x0002
@@ -504,6 +506,23 @@ def _sendMouseEvent(ev, x, y, dwData=0):
     #    raise ctypes.WinError()
 
 
+def _normalizeScrollArgs(x, y):
+    startx, starty = _position()
+    width, height = _size()
+
+    if x is None:
+        x = startx
+    else:
+        x = max(0, min(x, width - 1))
+
+    if y is None:
+        y = starty
+    else:
+        y = max(0, min(y, height - 1))
+
+    return x, y
+
+
 def _scroll(clicks, x=None, y=None):
     """Send the mouse vertical scroll event to Windows by calling the
     mouse_event() win32 function.
@@ -517,31 +536,16 @@ def _scroll(clicks, x=None, y=None):
     Returns:
       None
     """
-    startx, starty = _position()
-    width, height = _size()
-
-    if x is None:
-        x = startx
-    else:
-        if x < 0:
-            x = 0
-        elif x >= width:
-            x = width - 1
-    if y is None:
-        y = starty
-    else:
-        if y < 0:
-            y = 0
-        elif y >= height:
-            y = height - 1
+    x, y = _normalizeScrollArgs(x, y)
 
     try:
-        _sendMouseEvent(MOUSEEVENTF_WHEEL, x, y, dwData=clicks)
-    except (PermissionError, OSError): # TODO: We need to figure out how to prevent these errors, see https://github.com/asweigart/pyautogui/issues/60
-            pass
+        _moveTo(x, y)
+        _sendMouseEvent(MOUSEEVENTF_WHEEL, x, y, dwData=int(clicks) * WHEEL_DELTA)
+    except (PermissionError, OSError):
+        pass
 
 
-def _hscroll(clicks, x, y):
+def _hscroll(clicks, x=None, y=None):
     """Send the mouse horizontal scroll event to Windows by calling the
     mouse_event() win32 function.
 
@@ -554,10 +558,16 @@ def _hscroll(clicks, x, y):
     Returns:
       None
     """
-    return _scroll(clicks, x, y)
+    x, y = _normalizeScrollArgs(x, y)
+
+    try:
+        _moveTo(x, y)
+        _sendMouseEvent(MOUSEEVENTF_HWHEEL, x, y, dwData=int(clicks) * WHEEL_DELTA)
+    except (PermissionError, OSError):
+        pass
 
 
-def _vscroll(clicks, x, y):
+def _vscroll(clicks, x=None, y=None):
     """A wrapper for _scroll(), which does vertical scrolling.
 
     Args:
