@@ -539,8 +539,7 @@ def _scroll(clicks, x=None, y=None):
     x, y = _normalizeScrollArgs(x, y)
 
     try:
-        _moveTo(x, y)
-        _sendMouseEvent(MOUSEEVENTF_WHEEL, x, y, dwData=int(clicks) * WHEEL_DELTA)
+        _sendMouseEvent(MOUSEEVENTF_WHEEL | MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, x, y, dwData=int(clicks) * WHEEL_DELTA)
     except (PermissionError, OSError):
         pass
 
@@ -561,8 +560,7 @@ def _hscroll(clicks, x=None, y=None):
     x, y = _normalizeScrollArgs(x, y)
 
     try:
-        _moveTo(x, y)
-        _sendMouseEvent(MOUSEEVENTF_HWHEEL, x, y, dwData=int(clicks) * WHEEL_DELTA)
+        _sendMouseEvent(MOUSEEVENTF_HWHEEL | MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, x, y, dwData=int(clicks) * WHEEL_DELTA)
     except (PermissionError, OSError):
         pass
 
